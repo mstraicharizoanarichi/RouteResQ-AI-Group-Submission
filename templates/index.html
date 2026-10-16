@@ -1,0 +1,1619 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RouteResQ AI | Emergency Traffic Management</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #172033;
+        }
+
+        header {
+            background: #10243e;
+            color: white;
+            padding: 20px 28px;
+        }
+
+        header h1 {
+            font-size: 25px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 24px auto;
+            padding: 0 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card,
+        .panel,
+        .map-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px #0000000d;
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 340px minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .panel h2,
+        .map-panel h2 {
+            font-size: 18px;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            background: white;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            background: #0f766e;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #115e59;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .secondary-button {
+            background: #334155;
+        }
+
+        .secondary-button:hover {
+            background: #1e293b;
+        }
+
+        .clear-button {
+            background: #b91c1c;
+        }
+
+        .clear-button:hover {
+            background: #991b1b;
+        }
+
+        .warning-button {
+            background: #b45309;
+        }
+
+        .warning-button:hover {
+            background: #92400e;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 14px;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            border-radius: 8px;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+        }
+
+        .result h3 {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .result small {
+            display: inline-block;
+            margin-top: 8px;
+            color: #475569;
+        }
+
+        #map {
+            height: 540px;
+            width: 100%;
+            border-radius: 9px;
+            z-index: 1;
+        }
+
+        .location-selector {
+            margin-top: 18px;
+            padding: 16px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+        }
+
+        .location-selector h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .location-instructions,
+        .map-note {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .selected-location {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .selected-location strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .search-results {
+            margin-top: 8px;
+        }
+
+        .search-results button {
+            text-align: left;
+            background: white;
+            color: #172033;
+            border: 1px solid #cbd5e1;
+            font-weight: normal;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .search-results button:hover {
+            background: #ccfbf1;
+        }
+
+        .search-status {
+            margin-top: 7px;
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .map-note {
+            margin-top: 12px;
+            margin-bottom: 0;
+        }
+
+        .closure-list {
+            padding-left: 20px;
+            margin-top: 8px;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+        }
+
+        /*
+         * The select is deliberately scrollable.
+         * Each road segment is a separate option.
+         */
+        #closure-segment {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            height: 150px;
+            overflow-y: auto;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        #closure-segment option {
+            padding: 6px;
+            white-space: normal;
+        }
+
+        .closure-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .closure-legend-line {
+            display: inline-block;
+            width: 32px;
+            border-top: 4px dashed #dc2626;
+        }
+
+        .notice {
+            margin-top: 12px;
+            padding: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 7px;
+            color: #92400e;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        @media (max-width: 950px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 18px;
+            }
+
+            header h1 {
+                font-size: 21px;
+            }
+
+            .container {
+                padding: 0 12px;
+            }
+
+            .panel,
+            .map-panel,
+            .stat-card {
+                padding: 15px;
+            }
+
+            #map {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚑 RouteResQ AI</h1>
+    <p>AI-Based Dynamic Emergency Traffic Management Agent</p>
+</header>
+
+<main class="container">
+
+    <section class="stats">
+        <div class="stat-card">
+            <h3>AI Routing Algorithm</h3>
+            <p>A* Search</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Selected Traffic Level</h3>
+            <p id="traffic-status">Low</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Emergency Priority Request</h3>
+            <p id="emergency-status">Disabled</p>
+        </div>
+    </section>
+
+    <section class="layout">
+
+        <div class="panel">
+            <h2>Traffic Control Center</h2>
+
+            <label for="traffic">Traffic Level</label>
+            <select id="traffic">
+                <option value="low">Low Traffic</option>
+                <option value="medium">Medium Traffic</option>
+                <option value="high">High Traffic / Jam</option>
+            </select>
+
+            <label for="emergency">Emergency Vehicle</label>
+            <select id="emergency">
+                <option value="no">No</option>
+                <option value="yes">Yes - Emergency Priority</option>
+            </select>
+
+            <label for="vehicle-type">Emergency Vehicle Type</label>
+            <select id="vehicle-type">
+                <option value="ambulance">Ambulance</option>
+                <option value="fire">Fire Service</option>
+                <option value="police">Police Vehicle</option>
+                <option value="rescue">Rescue Vehicle</option>
+            </select>
+
+            <button type="button" id="route-button">
+                🧠 Find Best Route
+            </button>
+
+            <div class="result" id="result" aria-live="polite">
+                <h3>AI Route Result</h3>
+                Search for locations or select them on the map,
+                then click Find Best Route.
+            </div>
+
+            <div class="location-selector">
+                <h3>🚧 Simulated Road Closure</h3>
+
+                <p class="location-instructions">
+                    Calculate a route first. Select one road segment
+                    from the route. The system will attempt to find
+                    an alternative route around the closed segment.
+                </p>
+
+                <label for="closure-segment">
+                    Road Segment to Close
+                </label>
+
+                <select id="closure-segment" size="6" disabled>
+    <option value="">Calculate a route first</option>
+                </select>
+
+                <button
+                    type="button"
+                    id="close-road-button"
+                    class="warning-button"
+                    disabled
+                >
+                    🚧 Close Road &amp; Reroute
+                </button>
+
+                <button
+                    type="button"
+                    id="reopen-roads-button"
+                    class="clear-button"
+                    disabled
+                >
+                    Reopen All Roads
+                </button>
+
+                <div
+                    id="closure-status"
+                    class="search-status"
+                    aria-live="polite"
+                >
+                    No simulated road closures.
+                </div>
+
+                <div class="selected-location">
+                    <strong>Active Road Closures</strong>
+                    <ul id="closure-list" class="closure-list">
+                        <li>No roads closed.</li>
+                    </ul>
+                </div>
+
+                <div class="closure-legend">
+                    <span class="closure-legend-line"></span>
+                    <span>Simulated closed road</span>
+                </div>
+
+                <div class="notice">
+                    Road closures are simulated for this browser session.
+                    They do not represent verified real-world road closures.
+                </div>
+            </div>
+        </div>
+
+        <div class="map-panel">
+            <h2>OpenStreetMap Road Map</h2>
+
+            <div id="map"></div>
+
+            <div class="location-selector">
+                <h3>Search Start &amp; Destination</h3>
+
+                <p class="location-instructions">
+                    Search for a place and select a result, or use
+                    the map selection buttons below.
+                </p>
+
+                <label for="start-query">Start Location</label>
+                <input
+                    id="start-query"
+                    type="text"
+                    placeholder="e.g. Saidpur Railway Station"
+                    autocomplete="off"
+                >
+
+                <button type="button" id="search-start-button">
+                    🔎 Search Start
+                </button>
+
+                <div
+                    id="start-search-status"
+                    class="search-status"
+                    aria-live="polite"
+                ></div>
+
+                <div
+                    id="start-search-results"
+                    class="search-results"
+                ></div>
+
+                <div class="selected-location">
+                    <strong>Selected Start</strong>
+                    <span id="start-location">Not selected</span>
+                </div>
+
+                <label for="destination-query">
+                    Destination Location
+                </label>
+
+                <input
+                    id="destination-query"
+                    type="text"
+                    placeholder="e.g. Saidpur Hospital"
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    id="search-destination-button"
+                >
+                    🔎 Search Destination
+                </button>
+
+                <div
+                    id="destination-search-status"
+                    class="search-status"
+                    aria-live="polite"
+                ></div>
+
+                <div
+                    id="destination-search-results"
+                    class="search-results"
+                ></div>
+
+                <div class="selected-location">
+                    <strong>Selected Destination</strong>
+                    <span id="destination-location">Not selected</span>
+                </div>
+
+                <button type="button" id="select-start-button">
+                    📍 Select Start on Map
+                </button>
+
+                <button
+                    type="button"
+                    id="select-destination-button"
+                    class="secondary-button"
+                >
+                    🎯 Select Destination on Map
+                </button>
+
+                <button
+                    type="button"
+                    id="clear-locations-button"
+                    class="clear-button"
+                >
+                    Clear Selections
+                </button>
+
+                <p
+                    id="selection-instructions"
+                    class="search-status"
+                >
+                    Choose locations using search or map clicks.
+                </p>
+            </div>
+
+            <p class="map-note">
+                Map tiles are provided by OpenStreetMap. The A*
+                algorithm uses the locally stored road graph.
+                Routes may be unavailable outside the graph's coverage.
+                Live traffic and real traffic signal control are not
+                integrated.
+            </p>
+        </div>
+
+    </section>
+</main>
+
+<footer>
+    RouteResQ AI | Academic AI Project
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+"use strict";
+
+// ==================================================
+// MAP
+// ==================================================
+
+const map = L.map("map").setView([25.783, 88.900], 14);
+
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors"
+}).addTo(map);
+
+
+// Illustrative map reference markers.
+const locations = {
+    "University": [25.7830, 88.9000],
+    "Main Road": [25.7870, 88.9100],
+    "Hospital": [25.7750, 88.9070],
+    "Market": [25.7800, 88.9180]
+};
+
+for (const [name, position] of Object.entries(locations)) {
+    L.marker(position)
+        .addTo(map)
+        .bindPopup("<b>" + name + "</b>");
+}
+
+
+// ==================================================
+// STATE
+// ==================================================
+
+let startCoordinates = null;
+let destinationCoordinates = null;
+let selectionMode = null;
+
+let startMarker = null;
+let destinationMarker = null;
+let selectedRoute = null;
+
+let currentRouteNodes = [];
+let currentRouteCoordinates = [];
+let closedRoads = [];
+
+let routeRequestInProgress = false;
+
+
+let ambulanceMarker = null;
+let ambulanceTimer = null;
+
+function stopAmbulanceSimulation(removeMarker = true) {
+    if (ambulanceTimer !== null) {
+        clearInterval(ambulanceTimer);
+        ambulanceTimer = null;
+    }
+
+    if (removeMarker && ambulanceMarker) {
+        map.removeLayer(ambulanceMarker);
+        ambulanceMarker = null;
+    }
+}
+
+function startAmbulanceSimulation(routeCoordinates, enabled) {
+    stopAmbulanceSimulation(true);
+
+    if (
+        !enabled ||
+        !Array.isArray(routeCoordinates) ||
+        routeCoordinates.length < 2
+    ) {
+        return;
+    }
+
+    const vehicleType =
+        document.getElementById("vehicle-type").value;
+
+    const vehicleDesigns = {
+        ambulance: {
+            body: "#ffffff",
+            border: "#dc2626",
+            label: "+",
+            labelColor: "#dc2626"
+        },
+        fire: {
+            body: "#dc2626",
+            border: "#991b1b",
+            label: "FIRE",
+            labelColor: "#ffffff"
+        },
+        police: {
+            body: "#1e3a8a",
+            border: "#172554",
+            label: "POLICE",
+            labelColor: "#ffffff"
+        },
+        rescue: {
+            body: "#ea580c",
+            border: "#9a3412",
+            label: "RESCUE",
+            labelColor: "#ffffff"
+        }
+    };
+
+    const design = vehicleDesigns[vehicleType] ||
+        vehicleDesigns.ambulance;
+
+    const ambulanceIcon = L.divIcon({
+        className: "ambulance-marker",
+        html:
+            '<div style="position:relative;width:54px;height:28px;' +
+            'box-sizing:border-box;background:' + design.body + ';' +
+            'border:2px solid ' + design.border + ';border-radius:5px;' +
+            'box-shadow:0 1px 5px #555;display:flex;align-items:center;' +
+            'justify-content:center;">' +
+            '<span style="font:bold ' +
+            (vehicleType === "ambulance" ? "19px" : "9px") +
+            ' Arial,sans-serif;color:' + design.labelColor + ';' +
+            'white-space:nowrap;">' + design.label + '</span>' +
+            '<span style="position:absolute;right:3px;top:3px;' +
+            'width:9px;height:7px;background:#bfdbfe;' +
+            'border:1px solid #64748b;border-radius:2px;"></span>' +
+            '<span style="position:absolute;left:6px;bottom:-6px;' +
+            'width:8px;height:8px;background:#222;border:1px solid white;' +
+            'border-radius:50%;"></span>' +
+            '<span style="position:absolute;right:6px;bottom:-6px;' +
+            'width:8px;height:8px;background:#222;border:1px solid white;' +
+            'border-radius:50%;"></span></div>',
+        iconSize: [58, 36],
+        iconAnchor: [29, 18]
+    });
+
+    ambulanceMarker = L.marker(routeCoordinates[0], {
+        icon: ambulanceIcon,
+        title: "Simulated emergency vehicle",
+        zIndexOffset: 1000
+    }).addTo(map);
+
+    ambulanceMarker.bindPopup(
+        "Simulated ambulance location<br>" +
+        "<small>Movement is simulated, not live GPS tracking.</small>"
+    );
+
+    let segmentIndex = 0;
+    let progress = 0;
+
+    const segmentDuration = Math.max(
+        500,
+        18000 / (routeCoordinates.length - 1)
+    );
+
+    ambulanceTimer = setInterval(function () {
+        if (!ambulanceMarker) {
+            stopAmbulanceSimulation(false);
+            return;
+        }
+
+        if (segmentIndex >= routeCoordinates.length - 1) {
+            ambulanceMarker.setLatLng(
+                routeCoordinates[routeCoordinates.length - 1]
+            );
+            stopAmbulanceSimulation(false);
+            return;
+        }
+
+        progress += 100 / segmentDuration;
+
+        if (progress >= 1) {
+            segmentIndex += 1;
+            progress = 0;
+
+            if (segmentIndex >= routeCoordinates.length - 1) {
+                ambulanceMarker.setLatLng(
+                    routeCoordinates[routeCoordinates.length - 1]
+                );
+                stopAmbulanceSimulation(false);
+                return;
+            }
+        }
+
+        const from = routeCoordinates[segmentIndex];
+        const to = routeCoordinates[segmentIndex + 1];
+
+        ambulanceMarker.setLatLng([
+            from[0] + (to[0] - from[0]) * progress,
+            from[1] + (to[1] - from[1]) * progress
+        ]);
+    }, 100);
+}
+
+
+
+// ==================================================
+// ELEMENTS
+// ==================================================
+
+const startLocationText =
+    document.getElementById("start-location");
+
+const destinationLocationText =
+    document.getElementById("destination-location");
+
+const selectionInstructions =
+    document.getElementById("selection-instructions");
+
+const routeButton =
+    document.getElementById("route-button");
+
+const resultBox =
+    document.getElementById("result");
+
+const closureSegmentSelect =
+    document.getElementById("closure-segment");
+
+const closeRoadButton =
+    document.getElementById("close-road-button");
+
+const reopenRoadsButton =
+    document.getElementById("reopen-roads-button");
+
+const closureStatus =
+    document.getElementById("closure-status");
+
+const closureList =
+    document.getElementById("closure-list");
+
+const closureLayer = L.layerGroup().addTo(map);
+
+
+// ==================================================
+// HELPERS
+// ==================================================
+
+function formatCoordinates(coordinates) {
+    if (!coordinates) {
+        return "Not selected";
+    }
+
+    return coordinates[0].toFixed(6) +
+        ", " + coordinates[1].toFixed(6);
+}
+
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function (character) {
+        const entities = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        };
+
+        return entities[character];
+    });
+}
+
+
+function removeCurrentRoute() {
+    if (selectedRoute) {
+        map.removeLayer(selectedRoute);
+        selectedRoute = null;
+    }
+}
+
+
+function setResultMessage(title, message) {
+    resultBox.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+
+    const paragraph = document.createElement("p");
+    paragraph.textContent = message;
+
+    resultBox.append(heading, paragraph);
+}
+
+
+function resetRouteState() {
+    stopAmbulanceSimulation(true);
+    removeCurrentRoute();
+
+    currentRouteNodes = [];
+    currentRouteCoordinates = [];
+
+    updateClosureOptions();
+}
+
+
+// ==================================================
+// ROAD CLOSURES
+// ==================================================
+
+function roadKey(firstNode, secondNode) {
+    return [String(firstNode), String(secondNode)]
+        .sort()
+        .join("|");
+}
+
+
+function isRoadClosed(firstNode, secondNode) {
+    const key = roadKey(firstNode, secondNode);
+
+    return closedRoads.some(function (road) {
+        return roadKey(road.nodes[0], road.nodes[1]) === key;
+    });
+}
+
+
+function refreshClosureList() {
+    closureList.replaceChildren();
+
+    if (closedRoads.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No roads closed.";
+        closureList.appendChild(item);
+    } else {
+        closedRoads.forEach(function (road) {
+            const item = document.createElement("li");
+
+            item.textContent =
+                road.nodes[0] + " ↔ " + road.nodes[1];
+
+            closureList.appendChild(item);
+        });
+    }
+
+    reopenRoadsButton.disabled =
+        closedRoads.length === 0 || routeRequestInProgress;
+}
+
+
+function refreshClosureMap() {
+    closureLayer.clearLayers();
+
+    closedRoads.forEach(function (road) {
+        L.polyline(road.coordinates, {
+            color: "#dc2626",
+            weight: 9,
+            opacity: 0.95,
+            dashArray: "8, 8"
+        })
+        .bindPopup(
+            "<b>Simulated Road Closure</b><br>" +
+            escapeHTML(road.nodes[0]) + " ↔ " +
+            escapeHTML(road.nodes[1])
+        )
+        .addTo(closureLayer);
+    });
+
+    refreshClosureList();
+}
+
+
+function updateClosureOptions() {
+    closureSegmentSelect.replaceChildren();
+
+    const availableSegments = [];
+
+    for (
+        let index = 0;
+        index < currentRouteNodes.length - 1;
+        index++
+    ) {
+        const firstNode = currentRouteNodes[index];
+        const secondNode = currentRouteNodes[index + 1];
+
+        if (isRoadClosed(firstNode, secondNode)) {
+            continue;
+        }
+
+        availableSegments.push({
+            index: index,
+            firstNode: firstNode,
+            secondNode: secondNode
+        });
+    }
+
+    if (availableSegments.length === 0) {
+        const option = document.createElement("option");
+
+        option.value = "";
+        option.textContent = currentRouteNodes.length
+            ? "No open segments on current route"
+            : "Calculate a route first";
+
+        closureSegmentSelect.appendChild(option);
+
+        closureSegmentSelect.disabled = true;
+        closeRoadButton.disabled = true;
+
+        return;
+    }
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select a road segment";
+
+    closureSegmentSelect.appendChild(placeholder);
+
+    availableSegments.forEach(function (segment) {
+        const option = document.createElement("option");
+
+        option.value = String(segment.index);
+
+        // A distinct, readable label for every segment.
+        option.textContent =
+            "Road " + (segment.index + 1) +
+            " (" + segment.firstNode +
+            " ↔ " + segment.secondNode + ")";
+
+        closureSegmentSelect.appendChild(option);
+    });
+
+    closureSegmentSelect.disabled = routeRequestInProgress;
+    closeRoadButton.disabled = routeRequestInProgress;
+}
+
+
+function clearRoadClosures() {
+    closedRoads = [];
+
+    refreshClosureMap();
+    updateClosureOptions();
+
+    closureStatus.textContent =
+        "All simulated road closures cleared.";
+}
+
+
+// ==================================================
+// SELECT LOCATION
+// ==================================================
+
+function updateLocation(which, coordinates, label) {
+    resetRouteState();
+    clearRoadClosures();
+
+    if (which === "start") {
+        startCoordinates = coordinates;
+
+        if (startMarker) {
+            map.removeLayer(startMarker);
+        }
+
+        startMarker = L.marker(coordinates)
+            .addTo(map)
+            .bindPopup("<b>Start:</b> " + escapeHTML(label));
+
+        startLocationText.textContent =
+            label + " (" + formatCoordinates(coordinates) + ")";
+
+    } else {
+        destinationCoordinates = coordinates;
+
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+        }
+
+        destinationMarker = L.marker(coordinates)
+            .addTo(map)
+            .bindPopup("<b>Destination:</b> " + escapeHTML(label));
+
+        destinationLocationText.textContent =
+            label + " (" + formatCoordinates(coordinates) + ")";
+    }
+
+    map.setView(coordinates, 16);
+
+    setResultMessage(
+        "Location Selected",
+        "Choose the other location, then click Find Best Route."
+    );
+}
+
+
+// ==================================================
+// LOCATION SEARCH
+// ==================================================
+
+async function searchLocation(which) {
+    const isStart = which === "start";
+
+    const queryInput = document.getElementById(
+        isStart ? "start-query" : "destination-query"
+    );
+
+    const statusBox = document.getElementById(
+        isStart ? "start-search-status" : "destination-search-status"
+    );
+
+    const resultsBox = document.getElementById(
+        isStart ? "start-search-results" : "destination-search-results"
+    );
+
+    const searchButton = document.getElementById(
+        isStart ? "search-start-button" : "search-destination-button"
+    );
+
+    const query = queryInput.value.trim();
+
+    resultsBox.replaceChildren();
+
+    if (query.length < 2) {
+        statusBox.textContent = "Enter at least two characters.";
+        return;
+    }
+
+    statusBox.textContent = "Searching for location...";
+    searchButton.disabled = true;
+
+    try {
+        const response = await fetch(
+            "/search-location?q=" + encodeURIComponent(query)
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Location search failed."
+            );
+        }
+
+        if (!Array.isArray(data.results) || data.results.length === 0) {
+            statusBox.textContent = "No results found.";
+            return;
+        }
+
+        statusBox.textContent = "Select a result:";
+
+        data.results.forEach(function (place) {
+            const button = document.createElement("button");
+
+            button.type = "button";
+            button.textContent = place.name;
+
+            button.addEventListener("click", function () {
+                const coordinates = [
+                    Number(place.latitude),
+                    Number(place.longitude)
+                ];
+
+                if (
+                    !coordinates.every(Number.isFinite) ||
+                    coordinates[0] < -90 ||
+                    coordinates[0] > 90 ||
+                    coordinates[1] < -180 ||
+                    coordinates[1] > 180
+                ) {
+                    statusBox.textContent =
+                        "The result has invalid coordinates.";
+                    return;
+                }
+
+                updateLocation(which, coordinates, place.name);
+
+                statusBox.textContent = "Location selected.";
+                resultsBox.replaceChildren();
+
+                selectionInstructions.textContent =
+                    "Choose the other location, then find a route.";
+            });
+
+            resultsBox.appendChild(button);
+        });
+
+    } catch (error) {
+        statusBox.textContent = error.message;
+
+    } finally {
+        searchButton.disabled = false;
+    }
+}
+
+
+document.getElementById("search-start-button")
+    .addEventListener("click", function () {
+        searchLocation("start");
+    });
+
+
+document.getElementById("search-destination-button")
+    .addEventListener("click", function () {
+        searchLocation("destination");
+    });
+
+
+document.getElementById("start-query")
+    .addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            searchLocation("start");
+        }
+    });
+
+
+document.getElementById("destination-query")
+    .addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            searchLocation("destination");
+        }
+    });
+
+
+// ==================================================
+// MAP CLICK SELECTION
+// ==================================================
+
+document.getElementById("select-start-button")
+    .addEventListener("click", function () {
+        selectionMode = "start";
+
+        selectionInstructions.textContent =
+            "Click the starting point on the map.";
+    });
+
+
+document.getElementById("select-destination-button")
+    .addEventListener("click", function () {
+        selectionMode = "destination";
+
+        selectionInstructions.textContent =
+            "Click the destination on the map.";
+    });
+
+
+map.on("click", function (event) {
+    if (!selectionMode) {
+        selectionInstructions.textContent =
+            "Choose Select Start or Select Destination on Map first.";
+        return;
+    }
+
+    const which = selectionMode;
+    selectionMode = null;
+
+    const coordinates = [
+        event.latlng.lat,
+        event.latlng.lng
+    ];
+
+    updateLocation(which, coordinates, "Map selection");
+
+    selectionInstructions.textContent =
+        "Location selected. Choose the other location, then find a route.";
+});
+
+
+// ==================================================
+// CLEAR EVERYTHING
+// ==================================================
+
+document.getElementById("clear-locations-button")
+    .addEventListener("click", function () {
+        startCoordinates = null;
+        destinationCoordinates = null;
+        selectionMode = null;
+
+        if (startMarker) {
+            map.removeLayer(startMarker);
+            startMarker = null;
+        }
+
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+            destinationMarker = null;
+        }
+
+        resetRouteState();
+        clearRoadClosures();
+
+        startLocationText.textContent = "Not selected";
+        destinationLocationText.textContent = "Not selected";
+
+        document.getElementById("start-query").value = "";
+        document.getElementById("destination-query").value = "";
+
+        document.getElementById("start-search-status").textContent = "";
+        document.getElementById("destination-search-status").textContent = "";
+
+        document.getElementById("start-search-results").replaceChildren();
+        document.getElementById("destination-search-results").replaceChildren();
+
+        document.getElementById("traffic").value = "low";
+        document.getElementById("emergency").value = "no";
+        document.getElementById("vehicle-type").value = "ambulance";
+
+        document.getElementById("traffic-status").textContent = "Low";
+        document.getElementById("emergency-status").textContent = "Disabled";
+
+        selectionInstructions.textContent =
+            "Search for places or select them on the map.";
+
+        setResultMessage(
+            "AI Route Result",
+            "Selections cleared. Choose a start and destination."
+        );
+    });
+
+
+// ==================================================
+// CLOSE ROAD AND REROUTE
+// ==================================================
+
+async function closeSelectedRoad() {
+    if (routeRequestInProgress) {
+        return;
+    }
+
+    const selectedIndex = closureSegmentSelect.value;
+
+    if (selectedIndex === "") {
+        closureStatus.textContent =
+            "Please select a road segment first.";
+        return;
+    }
+
+    const index = Number(selectedIndex);
+
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= currentRouteNodes.length - 1
+    ) {
+        closureStatus.textContent =
+            "Invalid selection. Calculate the route again.";
+        return;
+    }
+
+    const firstNode = String(currentRouteNodes[index]);
+    const secondNode = String(currentRouteNodes[index + 1]);
+
+    if (isRoadClosed(firstNode, secondNode)) {
+        closureStatus.textContent =
+            "This road segment is already closed.";
+        return;
+    }
+
+    closedRoads.push({
+        nodes: [firstNode, secondNode],
+        coordinates: [
+            currentRouteCoordinates[index],
+            currentRouteCoordinates[index + 1]
+        ]
+    });
+
+    refreshClosureMap();
+    updateClosureOptions();
+
+    closureStatus.textContent =
+        "Road closure applied. Finding an alternative route...";
+
+    await findRoute();
+}
+
+
+closeRoadButton.addEventListener(
+    "click",
+    closeSelectedRoad
+);
+
+
+// ==================================================
+// REOPEN ALL ROADS
+// ==================================================
+
+reopenRoadsButton.addEventListener("click", async function () {
+    if (closedRoads.length === 0 || routeRequestInProgress) {
+        return;
+    }
+
+    clearRoadClosures();
+
+    if (startCoordinates && destinationCoordinates) {
+        closureStatus.textContent =
+            "Recalculating route with all roads reopened.";
+
+        await findRoute();
+    }
+});
+
+
+// ==================================================
+// A* ROUTE API
+// ==================================================
+
+async function findRoute() {
+    if (routeRequestInProgress) {
+        return;
+    }
+
+    if (!startCoordinates || !destinationCoordinates) {
+        setResultMessage(
+            "Location Selection Required",
+            "Please select both Start and Destination."
+        );
+        return;
+    }
+
+    if (
+        startCoordinates[0] === destinationCoordinates[0] &&
+        startCoordinates[1] === destinationCoordinates[1]
+    ) {
+        setResultMessage(
+            "Invalid Selection",
+            "Start and Destination must be different."
+        );
+        return;
+    }
+
+    const traffic = document.getElementById("traffic").value;
+    const emergency = document.getElementById("emergency").value;
+
+    document.getElementById("traffic-status").textContent =
+        traffic.charAt(0).toUpperCase() + traffic.slice(1);
+
+    document.getElementById("emergency-status").textContent =
+        emergency === "yes" ? "Requested" : "Disabled";
+
+    stopAmbulanceSimulation(true);
+    routeRequestInProgress = true;
+
+    routeButton.disabled = true;
+    routeButton.textContent = "Calculating Route...";
+
+    closeRoadButton.disabled = true;
+    reopenRoadsButton.disabled = true;
+    closureSegmentSelect.disabled = true;
+
+    setResultMessage(
+        "AI Route Result",
+        "Calculating the best available route..."
+    );
+
+    try {
+        const response = await fetch("/find-route", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                start_coordinates: startCoordinates,
+                destination_coordinates: destinationCoordinates,
+                traffic: traffic,
+                emergency: emergency === "yes",
+
+                blocked_roads: closedRoads.map(function (road) {
+                    return road.nodes;
+                })
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                removeCurrentRoute();
+
+                currentRouteNodes = [];
+                currentRouteCoordinates = [];
+
+                updateClosureOptions();
+                refreshClosureMap();
+            }
+
+            throw new Error(
+                data.error || "The server could not calculate a route."
+            );
+        }
+
+        const routeCoordinates = data.route_coordinates;
+        const routeNodes = data.route_nodes;
+
+        if (
+            !Array.isArray(routeCoordinates) ||
+            routeCoordinates.length < 2
+        ) {
+            throw new Error("Valid route coordinates were not returned.");
+        }
+
+        if (
+            !Array.isArray(routeNodes) ||
+            routeNodes.length !== routeCoordinates.length
+        ) {
+            throw new Error("Route node information is invalid.");
+        }
+
+        for (const coordinate of routeCoordinates) {
+            if (
+                !Array.isArray(coordinate) ||
+                coordinate.length !== 2 ||
+                !coordinate.every(Number.isFinite)
+            ) {
+                throw new Error("Invalid route coordinate received.");
+            }
+        }
+
+        currentRouteNodes = routeNodes;
+        currentRouteCoordinates = routeCoordinates;
+
+        removeCurrentRoute();
+
+        selectedRoute = L.polyline(routeCoordinates, {
+            color: "#16a34a",
+            weight: 7,
+            opacity: 0.95
+        }).addTo(map);
+
+        map.fitBounds(selectedRoute.getBounds(), {
+            padding: [40, 40]
+        });
+
+        updateClosureOptions();
+        refreshClosureMap();
+
+        startAmbulanceSimulation(
+            routeCoordinates,
+            emergency === "yes"
+        );
+
+        closureStatus.textContent = closedRoads.length
+            ? "Route recalculated with " +
+              closedRoads.length +
+              " simulated road closure(s)."
+            : "No simulated road closures.";
+
+        const distanceKm = Number(data.distance_km);
+        const trafficCost = Number(data.traffic_cost);
+
+        const estimatedTime =
+            Number(data.estimated_travel_time_minutes);
+
+        const signalDelay =
+            Number(data.simulated_signal_delay_minutes);
+
+        const resultContent = document.createElement("div");
+
+        resultContent.innerHTML = `
+            <h3>AI Route Result</h3>
+
+            <b>Start:</b><br>
+            ${escapeHTML(startLocationText.textContent)}<br>
+
+            <b>Destination:</b><br>
+            ${escapeHTML(destinationLocationText.textContent)}<br>
+
+            <b>Road Distance:</b>
+            ${
+                Number.isFinite(distanceKm)
+                    ? distanceKm.toFixed(3) + " km"
+                    : "Not available"
+            }<br>
+
+            <b>Route Nodes:</b> ${routeNodes.length}<br>
+
+            <b>Traffic-adjusted Cost:</b>
+            ${
+                Number.isFinite(trafficCost)
+                    ? trafficCost.toFixed(2)
+                    : "Not available"
+            }<br>
+
+            <b>Estimated Travel Time:</b>
+            ${
+                Number.isFinite(estimatedTime)
+                    ? estimatedTime.toFixed(1) + " min (simulated)"
+                    : "Not available"
+            }<br>
+
+            <b>Simulated Signal Delay:</b>
+            ${
+                Number.isFinite(signalDelay)
+                    ? signalDelay.toFixed(2) + " min"
+                    : "Not available"
+            }<br>
+
+            <b>Selected Traffic Level:</b>
+            ${escapeHTML(data.traffic || traffic)}<br>
+
+            <b>Emergency Priority Request:</b>
+            ${data.emergency_priority ? "Requested" : "Not requested"}<br>
+
+            <b>Selected Vehicle:</b>
+            ${escapeHTML(document.getElementById("vehicle-type").selectedOptions[0].textContent)}<br>
+
+            <b>Active Road Closures:</b>
+            ${closedRoads.length}<br>
+
+            <b>Status:</b>
+            ${escapeHTML(data.message || "Route calculated.")}<br>
+
+            <small>
+                Traffic and travel time are simulated.
+                Live traffic and real signal control are not integrated.
+            </small>
+        `;
+
+        resultBox.replaceChildren(resultContent);
+
+    } catch (error) {
+        console.error("Route calculation error:", error);
+
+        setResultMessage("Route Calculation Failed", error.message);
+
+        if (closedRoads.length > 0) {
+            closureStatus.textContent =
+                "The closure remains active. An alternative route " +
+                "could not be confirmed.";
+        }
+
+    } finally {
+        routeRequestInProgress = false;
+
+        routeButton.disabled = false;
+        routeButton.textContent = "🧠 Find Best Route";
+
+        updateClosureOptions();
+        refreshClosureList();
+    }
+}
+
+
+routeButton.addEventListener("click", findRoute);
+
+</script>
+</body>
+</html>

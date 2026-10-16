@@ -1,0 +1,44 @@
+﻿# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test and coverage cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local logs
+*.log
+
+# Temporary backup files
+app_backup.py
+app_before_*.py
+app_emergency_routing_working.py
+astar_backup.py
+real_road_routing_backup.py
+real_road_routing_before_*.py
+real_road_routing_emergency_working.py
+index_before_*_backup.html
+
+# Downloaded raw road data
+/data/*.osm.gz
+
+README_before_eta_update_backup.md
+index_before_eta_*.html
+
+templates/index_before_road_closure.html
