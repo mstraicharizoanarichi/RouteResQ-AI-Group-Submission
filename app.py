@@ -185,6 +185,54 @@ def validate_blocked_roads(blocked_roads):
     return validated_roads
 
 
+def validate_accident_roads(accident_roads):
+    """Validate simulated accident segments against the road graph."""
+
+    if not isinstance(accident_roads, list):
+        raise ValueError("accident_roads must be a list.")
+
+    if len(accident_roads) > 100:
+        raise ValueError("A maximum of 100 accident segments is allowed.")
+
+    validated = []
+    seen = set()
+
+    for road in accident_roads:
+        if not isinstance(road, (list, tuple)) or len(road) != 2:
+            raise ValueError("Each accident road must contain two node IDs.")
+
+        first, second = road
+
+        if (
+            not isinstance(first, (str, int)) or isinstance(first, bool)
+            or not isinstance(second, (str, int)) or isinstance(second, bool)
+        ):
+            raise ValueError("Accident node IDs must be strings or integers.")
+
+        first, second = str(first), str(second)
+
+        if first not in router.nodes or second not in router.nodes:
+            raise ValueError("An accident road contains an unknown node ID.")
+
+        if first == second:
+            raise ValueError("An accident must connect two different nodes.")
+
+        forward = second in router.graph.get(first, {})
+        reverse = first in router.graph.get(second, {})
+
+        if not forward and not reverse:
+            raise ValueError(
+                f"No mapped road segment exists between {first} and {second}."
+            )
+
+        key = frozenset((first, second))
+        if key not in seen:
+            seen.add(key)
+            validated.append((first, second))
+
+    return validated
+
+
 # --------------------------------------------------
 # Calculate traffic-aware routes using A*
 # --------------------------------------------------
@@ -220,6 +268,10 @@ def find_route():
         # Validate requested road closures.
         blocked_roads = validate_blocked_roads(
             data.get("blocked_roads", [])
+        )
+
+        accident_roads = validate_accident_roads(
+            data.get("accident_roads", [])
         )
 
         # Coordinates may come from map clicks or search results.
@@ -341,7 +393,8 @@ def find_route():
                 destination_node,
                 traffic_level=traffic_level,
                 emergency_vehicle=emergency_vehicle,
-                blocked_roads=blocked_roads
+                blocked_roads=blocked_roads,
+                accident_roads=accident_roads
             )
 
             start_name = (
@@ -359,7 +412,8 @@ def find_route():
                 destination_name,
                 traffic_level=traffic_level,
                 emergency_vehicle=emergency_vehicle,
-                blocked_roads=blocked_roads
+                blocked_roads=blocked_roads,
+                accident_roads=accident_roads
             )
 
         # No available route.
@@ -464,6 +518,8 @@ def find_route():
                 list(road) for road in blocked_roads
             ],
             "blocked_roads_avoided": len(blocked_roads),
+            "accident_roads_count": len(accident_roads),
+            "accident_roads": [list(road) for road in accident_roads],
 
             # Important limitation notice.
             "message": message
@@ -473,6 +529,172 @@ def find_route():
         return jsonify({
             "error": str(error)
         }), 400
+
+
+
+
+# --------------------------------------------------
+# Compare A* and Dijkstra
+# --------------------------------------------------
+
+@app.route("/compare-algorithms", methods=["POST"])
+def compare_algorithms_api():
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "error": "Request body must be a valid JSON object."
+        }), 400
+
+    traffic = str(data.get("traffic", "low")).lower()
+    emergency = data.get("emergency", False)
+
+    if traffic not in {"low", "medium", "high"}:
+        return jsonify({
+            "error": "Traffic must be low, medium, or high."
+        }), 400
+
+    if not isinstance(emergency, bool):
+        return jsonify({
+            "error": "Emergency must be true or false."
+        }), 400
+
+    try:
+        coordinates_supplied = (
+            "start_coordinates" in data
+            or "destination_coordinates" in data
+        )
+
+        if coordinates_supplied:
+            start_coordinates = data.get("start_coordinates")
+            destination_coordinates = data.get(
+                "destination_coordinates"
+            )
+
+            if (
+                not isinstance(start_coordinates, (list, tuple))
+                or len(start_coordinates) != 2
+            ):
+                return jsonify({
+                    "error": (
+                        "start_coordinates must be "
+                        "[latitude, longitude]."
+                    )
+                }), 400
+
+            if (
+                not isinstance(destination_coordinates, (list, tuple))
+                or len(destination_coordinates) != 2
+            ):
+                return jsonify({
+                    "error": (
+                        "destination_coordinates must be "
+                        "[latitude, longitude]."
+                    )
+                }), 400
+
+            try:
+                start_lat, start_lon = map(float, start_coordinates)
+                dest_lat, dest_lon = map(float, destination_coordinates)
+            except (TypeError, ValueError):
+                return jsonify({
+                    "error": "Coordinates must be numeric."
+                }), 400
+
+            coordinates = (
+                start_lat, start_lon, dest_lat, dest_lon
+            )
+
+            if not all(map(math.isfinite, coordinates)):
+                return jsonify({
+                    "error": "Coordinates must be finite numbers."
+                }), 400
+
+            if not (
+                -90 <= start_lat <= 90
+                and -180 <= start_lon <= 180
+                and -90 <= dest_lat <= 90
+                and -180 <= dest_lon <= 180
+            ):
+                return jsonify({
+                    "error": (
+                        "Coordinates are outside valid "
+                        "geographic ranges."
+                    )
+                }), 400
+
+            start_nearest = router.find_nearest_node(
+                start_lat, start_lon
+            )
+            destination_nearest = router.find_nearest_node(
+                dest_lat, dest_lon
+            )
+
+            max_snap_distance_meters = 2000
+
+            if start_nearest["distance_meters"] > max_snap_distance_meters:
+                return jsonify({
+                    "error": (
+                        "The selected start location is too far "
+                        "from a mapped road."
+                    )
+                }), 400
+
+            if (
+                destination_nearest["distance_meters"]
+                > max_snap_distance_meters
+            ):
+                return jsonify({
+                    "error": (
+                        "The selected destination is too far "
+                        "from a mapped road."
+                    )
+                }), 400
+
+            start = str(start_nearest["node_id"])
+            destination = str(destination_nearest["node_id"])
+
+        else:
+            start = data.get("start", "University")
+            destination = data.get("destination", "Market")
+
+            if not isinstance(start, str) or not start.strip():
+                return jsonify({
+                    "error": "Start must be a non-empty string."
+                }), 400
+
+            if (
+                not isinstance(destination, str)
+                or not destination.strip()
+            ):
+                return jsonify({
+                    "error": "Destination must be a non-empty string."
+                }), 400
+
+            start = start.strip()
+            destination = destination.strip()
+
+        blocked_roads = validate_blocked_roads(
+            data.get("blocked_roads", [])
+        )
+
+        accident_roads = validate_accident_roads(
+            data.get("accident_roads", [])
+        )
+
+        result = router.compare_algorithms(
+            start,
+            destination,
+            traffic_level=traffic,
+            emergency_vehicle=emergency,
+            blocked_roads=blocked_roads,
+            accident_roads=accident_roads
+        )
+
+        return jsonify(result)
+
+    except (ValueError, KeyError, TypeError) as error:
+        return jsonify({"error": str(error)}), 400
 
 
 if __name__ == "__main__":

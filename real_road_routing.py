@@ -136,7 +136,8 @@ class RealRoadRouter:
         destination_name,
         traffic_level="low",
         emergency_vehicle=False,
-        blocked_roads=None
+        blocked_roads=None,
+        accident_roads=None
     ):
         """
         Find a traffic-adjusted A* route.
@@ -170,6 +171,29 @@ class RealRoadRouter:
         if traffic_level not in TRAFFIC_LEVELS:
             raise ValueError(
                 "Traffic level must be low, medium, or high."
+            )
+
+        # Normalize simulated accident segments.
+        normalized_accident_roads = set()
+        for road in accident_roads or []:
+            if not isinstance(road, (list, tuple)) or len(road) != 2:
+                raise ValueError(
+                    "Each accident road must contain two node IDs."
+                )
+            source_node, target_node = map(str, road)
+            if (
+                source_node not in self.nodes
+                or target_node not in self.nodes
+            ):
+                raise ValueError(
+                    "An accident road contains an unknown node ID."
+                )
+            if source_node == target_node:
+                raise ValueError(
+                    "An accident road must connect two different nodes."
+                )
+            normalized_accident_roads.add(
+                frozenset((source_node, target_node))
             )
 
         # Normalize closed road segments.
@@ -289,6 +313,10 @@ class RealRoadRouter:
                 if emergency_vehicle:
                     factor = 1.0 + (factor - 1.0) * 0.35
 
+                # Simulated accident: triple this segment cost.
+                if frozenset((str(current), str(neighbor))) in normalized_accident_roads:
+                    factor *= 3.0
+
                 edge_cost = road_distance * factor
                 new_cost = current_cost + edge_cost
 
@@ -359,6 +387,140 @@ class RealRoadRouter:
             "blocked_roads_avoided": len(
                 normalized_blocked_roads
             ),
+        }
+
+
+    def compare_algorithms(
+        self, start_name, destination_name,
+        traffic_level="low", emergency_vehicle=False,
+        blocked_roads=None, accident_roads=None
+    ):
+        """Compare A* and Dijkstra using identical edge costs."""
+        import time
+
+        start = PLACES.get(str(start_name), str(start_name))
+        goal = PLACES.get(str(destination_name), str(destination_name))
+        traffic_level = str(traffic_level).lower()
+
+        if traffic_level not in TRAFFIC_LEVELS:
+            raise ValueError("Traffic level must be low, medium, or high.")
+        if not isinstance(emergency_vehicle, bool):
+            raise ValueError("emergency_vehicle must be True or False.")
+        if start not in self.nodes or goal not in self.nodes:
+            raise ValueError("Start or destination road node not found.")
+
+        blocked = set()
+        for road in blocked_roads or []:
+            if not isinstance(road, (list, tuple)) or len(road) != 2:
+                raise ValueError("Each blocked road must contain two node IDs.")
+            a, b = map(str, road)
+            if a not in self.nodes or b not in self.nodes:
+                raise ValueError("A blocked road contains an unknown node ID.")
+            blocked.add(frozenset((a, b)))
+
+        accident = set()
+        for road in accident_roads or []:
+            if not isinstance(road, (list, tuple)) or len(road) != 2:
+                raise ValueError("Each accident road must contain two node IDs.")
+            a, b = map(str, road)
+            if a not in self.nodes or b not in self.nodes:
+                raise ValueError("An accident road contains an unknown node ID.")
+            if a == b:
+                raise ValueError("An accident road must connect two different nodes.")
+            accident.add(frozenset((a, b)))
+
+        goal_point = (self.nodes[goal]["lat"], self.nodes[goal]["lon"])
+
+        def search(use_heuristic):
+            started = time.perf_counter()
+            queue = [(0.0, 0.0, start)]
+            costs = {start: 0.0}
+            distances = {start: 0.0}
+            previous = {start: None}
+            expanded = 0
+
+            while queue:
+                _, cost, current = heapq.heappop(queue)
+                if cost > costs.get(current, float("inf")):
+                    continue
+
+                expanded += 1
+                if current == goal:
+                    break
+
+                for neighbor, raw_distance in self.graph.get(current, {}).items():
+                    if frozenset((str(current), str(neighbor))) in blocked:
+                        continue
+
+                    distance = float(raw_distance)
+                    if not math.isfinite(distance) or distance < 0:
+                        continue
+
+                    factor = self.congestion_factor(
+                        current, neighbor, traffic_level
+                    )
+                    if emergency_vehicle:
+                        factor = 1.0 + (factor - 1.0) * 0.35
+
+                    # Both A* and Dijkstra use the same accident penalty.
+                    if frozenset((str(current), str(neighbor))) in accident:
+                        factor *= 3.0
+
+                    new_cost = cost + distance * factor
+                    if new_cost >= costs.get(neighbor, float("inf")):
+                        continue
+
+                    costs[neighbor] = new_cost
+                    distances[neighbor] = distances[current] + distance
+                    previous[neighbor] = current
+
+                    heuristic = 0.0
+                    if use_heuristic:
+                        point = (
+                            self.nodes[neighbor]["lat"],
+                            self.nodes[neighbor]["lon"]
+                        )
+                        heuristic = haversine(point, goal_point)
+
+                    heapq.heappush(
+                        queue, (new_cost + heuristic, new_cost, neighbor)
+                    )
+
+            elapsed_ms = (time.perf_counter() - started) * 1000
+
+            if goal not in costs:
+                return {
+                    "found": False,
+                    "execution_time_ms": round(elapsed_ms, 3),
+                    "expanded_nodes": expanded,
+                    "route": [],
+                    "distance_km": None,
+                    "traffic_cost": None,
+                }
+
+            route = []
+            node = goal
+            while node is not None:
+                route.append(node)
+                node = previous[node]
+            route.reverse()
+
+            return {
+                "found": True,
+                "execution_time_ms": round(elapsed_ms, 3),
+                "expanded_nodes": expanded,
+                "route": route,
+                "distance_km": round(distances[goal] / 1000, 3),
+                "traffic_cost": round(costs[goal], 2),
+            }
+
+        return {
+            "A*": search(True),
+            "Dijkstra": search(False),
+            "traffic_level": traffic_level,
+            "emergency_vehicle": emergency_vehicle,
+            "blocked_roads_count": len(blocked),
+            "accident_roads_count": len(accident),
         }
 
 

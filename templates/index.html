@@ -338,6 +338,121 @@
                 height: 400px;
             }
         }
+
+        .algorithm-comparison {
+            margin-top: 20px;
+            padding: 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        .algorithm-comparison h3 {
+            margin-bottom: 10px;
+            color: #10243e;
+            font-size: 17px;
+        }
+
+        .comparison-description,
+        .comparison-note {
+            display: block;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .comparison-result {
+            margin-top: 14px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .comparison-result table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .comparison-result th,
+        .comparison-result td {
+            padding: 9px 7px;
+            border: 1px solid #cbd5e1;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .comparison-result th {
+            background: #e2e8f0;
+            color: #10243e;
+        }
+
+        .comparison-note {
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+
+
+        .route-summary {
+            margin: 12px 0;
+        }
+
+        .route-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .route-summary-card {
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        .route-summary-card span {
+            display: block;
+            margin-bottom: 5px;
+            color: #475569;
+            font-size: 12px;
+        }
+
+        .route-summary-card strong {
+            color: #10243e;
+            font-size: 17px;
+            overflow-wrap: anywhere;
+        }
+
+        .route-more-details,
+        .algorithm-comparison {
+            margin: 14px 0;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            background: #f8fafc;
+        }
+
+        .route-more-details summary,
+        .algorithm-comparison > summary {
+            cursor: pointer;
+            font-weight: 700;
+            color: #10243e;
+            padding: 5px 0;
+        }
+
+        .comparison-details {
+            padding-top: 10px;
+        }
+
+        @media (max-width: 420px) {
+            .route-summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 
@@ -403,6 +518,28 @@
                 then click Find Best Route.
             </div>
 
+            <details class="algorithm-comparison"><summary>Advanced AI Details ? A* vs Dijkstra</summary><div class="comparison-details">
+                <h3 id="comparison-title">A* vs Dijkstra</h3>
+                <p class="comparison-description">
+                    Compare both search algorithms using the selected locations,
+                    traffic level, emergency priority and active road closures.
+                </p>
+
+                <button type="button" id="compare-button">
+                    Compare Algorithms
+                </button>
+
+                <div id="comparison-result" class="comparison-result"
+                     aria-live="polite">
+                    Select Start and Destination on the map, then compare.
+                </div>
+
+                <small class="comparison-note">
+                    Execution time varies by computer and run.
+                    Traffic and emergency effects are simulated.
+                </small>
+            </div></details>
+
             <div class="location-selector">
                 <h3>🚧 Simulated Road Closure</h3>
 
@@ -462,6 +599,55 @@
                     Road closures are simulated for this browser session.
                     They do not represent verified real-world road closures.
                 </div>
+
+                <hr>
+
+                <h3>Simulated Accident</h3>
+                <p class="location-instructions">
+                    Select a segment of the current route to simulate an
+                    accident. The AI will recalculate the route. This is a
+                    simulation, not a live accident report.
+                </p>
+
+                <label for="accident-segment">Road Segment</label>
+                <select id="accident-segment" size="5" disabled>
+                    <option value="">Calculate a route first</option>
+                </select>
+
+                <button type="button" id="add-accident-button"
+                        class="warning-button" disabled>
+                    Add Simulated Accident &amp; Reroute
+                </button>
+
+                <label for="accident-active-list">Active Simulated Accidents</label>
+                <select id="accident-active-list" size="4">
+                    <option value="">No simulated accidents</option>
+                </select>
+
+                <button type="button" id="remove-accident-button"
+                        class="clear-button" disabled>
+                    Remove Selected Accident &amp; Reroute
+                </button>
+
+                <button type="button" id="clear-accidents-button"
+                        class="clear-button" disabled>
+                    Clear All Simulated Accidents
+                </button>
+
+                <div id="accident-status" class="search-status"
+                     aria-live="polite">
+                    No simulated accidents.
+                </div>
+
+                <div class="selected-location">
+                    <strong>Accident Map Legend</strong>
+                    <div class="closure-legend">
+                        <span style="display:inline-block;width:30px;
+                            border-top:4px dashed #9333ea;"></span>
+                        <span>Simulated accident road</span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -631,12 +817,16 @@ let selectedRoute = null;
 let currentRouteNodes = [];
 let currentRouteCoordinates = [];
 let closedRoads = [];
+let accidentRoads = [];
 
 let routeRequestInProgress = false;
 
 
 let ambulanceMarker = null;
 let ambulanceTimer = null;
+let ambulanceRouteCoordinates = [];
+let ambulanceSegmentIndex = 0;
+let ambulanceProgress = 0;
 
 function stopAmbulanceSimulation(removeMarker = true) {
     if (ambulanceTimer !== null) {
@@ -648,16 +838,34 @@ function stopAmbulanceSimulation(removeMarker = true) {
         map.removeLayer(ambulanceMarker);
         ambulanceMarker = null;
     }
+
+    if (removeMarker) {
+        ambulanceRouteCoordinates = [];
+        ambulanceSegmentIndex = 0;
+        ambulanceProgress = 0;
+    }
 }
 
 function startAmbulanceSimulation(routeCoordinates, enabled) {
-    stopAmbulanceSimulation(true);
-
     if (
         !enabled ||
         !Array.isArray(routeCoordinates) ||
         routeCoordinates.length < 2
     ) {
+        stopAmbulanceSimulation(true);
+        return;
+    }
+
+    if (ambulanceMarker && ambulanceTimer !== null) {
+        const position = ambulanceMarker.getLatLng();
+
+        // Continue from the current simulated vehicle position.
+        ambulanceRouteCoordinates = [
+            [position.lat, position.lng],
+            ...routeCoordinates
+        ];
+        ambulanceSegmentIndex = 0;
+        ambulanceProgress = 0;
         return;
     }
 
@@ -730,12 +938,13 @@ function startAmbulanceSimulation(routeCoordinates, enabled) {
         "<small>Movement is simulated, not live GPS tracking.</small>"
     );
 
-    let segmentIndex = 0;
-    let progress = 0;
+    ambulanceRouteCoordinates = routeCoordinates.slice();
+    ambulanceSegmentIndex = 0;
+    ambulanceProgress = 0;
 
     const segmentDuration = Math.max(
         500,
-        18000 / (routeCoordinates.length - 1)
+        18000 / (ambulanceRouteCoordinates.length - 1)
     );
 
     ambulanceTimer = setInterval(function () {
@@ -744,35 +953,35 @@ function startAmbulanceSimulation(routeCoordinates, enabled) {
             return;
         }
 
-        if (segmentIndex >= routeCoordinates.length - 1) {
+        if (ambulanceSegmentIndex >= ambulanceRouteCoordinates.length - 1) {
             ambulanceMarker.setLatLng(
-                routeCoordinates[routeCoordinates.length - 1]
+                ambulanceRouteCoordinates[ambulanceRouteCoordinates.length - 1]
             );
             stopAmbulanceSimulation(false);
             return;
         }
 
-        progress += 100 / segmentDuration;
+        ambulanceProgress += 100 / segmentDuration;
 
-        if (progress >= 1) {
-            segmentIndex += 1;
-            progress = 0;
+        if (ambulanceProgress >= 1) {
+            ambulanceSegmentIndex += 1;
+            ambulanceProgress = 0;
 
-            if (segmentIndex >= routeCoordinates.length - 1) {
+            if (ambulanceSegmentIndex >= ambulanceRouteCoordinates.length - 1) {
                 ambulanceMarker.setLatLng(
-                    routeCoordinates[routeCoordinates.length - 1]
+                    ambulanceRouteCoordinates[ambulanceRouteCoordinates.length - 1]
                 );
                 stopAmbulanceSimulation(false);
                 return;
             }
         }
 
-        const from = routeCoordinates[segmentIndex];
-        const to = routeCoordinates[segmentIndex + 1];
+        const from = ambulanceRouteCoordinates[ambulanceSegmentIndex];
+        const to = ambulanceRouteCoordinates[ambulanceSegmentIndex + 1];
 
         ambulanceMarker.setLatLng([
-            from[0] + (to[0] - from[0]) * progress,
-            from[1] + (to[1] - from[1]) * progress
+            from[0] + (to[0] - from[0]) * ambulanceProgress,
+            from[1] + (to[1] - from[1]) * ambulanceProgress
         ]);
     }, 100);
 }
@@ -814,6 +1023,27 @@ const closureList =
     document.getElementById("closure-list");
 
 const closureLayer = L.layerGroup().addTo(map);
+
+const accidentSegmentSelect =
+    document.getElementById("accident-segment");
+
+const addAccidentButton =
+    document.getElementById("add-accident-button");
+
+const activeAccidentSelect =
+    document.getElementById("accident-active-list");
+
+const removeAccidentButton =
+    document.getElementById("remove-accident-button");
+
+const clearAccidentsButton =
+    document.getElementById("clear-accidents-button");
+
+const accidentStatus =
+    document.getElementById("accident-status");
+
+const accidentLayer = L.layerGroup().addTo(map);
+
 
 
 // ==================================================
@@ -872,8 +1102,11 @@ function resetRouteState() {
 
     currentRouteNodes = [];
     currentRouteCoordinates = [];
+    accidentRoads = [];
+    refreshAccidentMap();
 
     updateClosureOptions();
+    updateAccidentOptions();
 }
 
 
@@ -908,8 +1141,7 @@ function refreshClosureList() {
         closedRoads.forEach(function (road) {
             const item = document.createElement("li");
 
-            item.textContent =
-                road.nodes[0] + " ↔ " + road.nodes[1];
+            item.textContent = road.label || "Closed route segment";
 
             closureList.appendChild(item);
         });
@@ -932,13 +1164,41 @@ function refreshClosureMap() {
         })
         .bindPopup(
             "<b>Simulated Road Closure</b><br>" +
-            escapeHTML(road.nodes[0]) + " ↔ " +
-            escapeHTML(road.nodes[1])
+            escapeHTML(road.label || "Closed route segment")
         )
         .addTo(closureLayer);
     });
 
     refreshClosureList();
+}
+
+
+function getSegmentDistanceMeters(first, second) {
+    const toRadians = value => value * Math.PI / 180;
+    const lat1 = toRadians(first[0]);
+    const lat2 = toRadians(second[0]);
+    const deltaLat = toRadians(second[0] - first[0]);
+    const deltaLon = toRadians(second[1] - first[1]);
+
+    const a =
+        Math.sin(deltaLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) *
+        Math.sin(deltaLon / 2) ** 2;
+
+    return 6371000 * 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(Math.max(0, 1 - a))
+    );
+}
+
+
+function formatSegmentLabel(index, first, second) {
+    const distance = Math.round(
+        getSegmentDistanceMeters(first, second)
+    );
+
+    return "Route segment " + (index + 1) +
+        " (about " + distance + " m)";
 }
 
 
@@ -993,17 +1253,16 @@ function updateClosureOptions() {
 
         option.value = String(segment.index);
 
-        // A distinct, readable label for every segment.
-        option.textContent =
-            "Road " + (segment.index + 1) +
-            " (" + segment.firstNode +
-            " ↔ " + segment.secondNode + ")";
-
-        closureSegmentSelect.appendChild(option);
+        option.textContent = formatSegmentLabel(
+            segment.index,
+            currentRouteCoordinates[segment.index],
+            currentRouteCoordinates[segment.index + 1]
+        );closureSegmentSelect.appendChild(option);
     });
 
     closureSegmentSelect.disabled = routeRequestInProgress;
     closeRoadButton.disabled = routeRequestInProgress;
+    updateAccidentOptions();
 }
 
 
@@ -1019,6 +1278,219 @@ function clearRoadClosures() {
 
 
 // ==================================================
+
+// ==================================================
+// SIMULATED ACCIDENTS
+// ==================================================
+
+function isRoadAccident(firstNode, secondNode) {
+    const key = roadKey(firstNode, secondNode);
+    return accidentRoads.some(function (road) {
+        return roadKey(road.nodes[0], road.nodes[1]) === key;
+    });
+}
+
+function refreshAccidentMap() {
+    accidentLayer.clearLayers();
+
+    accidentRoads.forEach(function (road) {
+        L.polyline(road.coordinates, {
+            color: "#9333ea",
+            weight: 8,
+            opacity: 0.95,
+            dashArray: "10, 8"
+        })
+        .bindPopup(
+            "<b>Simulated Accident</b><br>" +
+            escapeHTML(road.label)
+        )
+        .addTo(accidentLayer);
+    });
+
+    refreshAccidentList();
+}
+
+function refreshAccidentList() {
+    activeAccidentSelect.replaceChildren();
+
+    if (accidentRoads.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No simulated accidents";
+        activeAccidentSelect.appendChild(option);
+    } else {
+        accidentRoads.forEach(function (road, index) {
+            const option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = road.label;
+            activeAccidentSelect.appendChild(option);
+        });
+
+        activeAccidentSelect.selectedIndex = 0;
+    }
+
+    removeAccidentButton.disabled =
+        routeRequestInProgress || accidentRoads.length === 0;
+
+    clearAccidentsButton.disabled =
+        routeRequestInProgress || accidentRoads.length === 0;
+}
+
+function updateAccidentOptions() {
+    accidentSegmentSelect.replaceChildren();
+
+    const available = [];
+
+    for (let index = 0; index < currentRouteNodes.length - 1; index++) {
+        const firstNode = currentRouteNodes[index];
+        const secondNode = currentRouteNodes[index + 1];
+
+        if (
+            isRoadClosed(firstNode, secondNode) ||
+            isRoadAccident(firstNode, secondNode)
+        ) {
+            continue;
+        }
+
+        available.push({
+            index: index,
+            first: firstNode,
+            second: secondNode
+        });
+    }
+
+    if (available.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = currentRouteNodes.length > 1
+            ? "No available route segments"
+            : "Calculate a route first";
+        accidentSegmentSelect.appendChild(option);
+    } else {
+        available.forEach(function (segment) {
+            const option = document.createElement("option");
+            option.value = String(segment.index);
+            option.textContent = formatSegmentLabel(
+                segment.index,
+                currentRouteCoordinates[segment.index],
+                currentRouteCoordinates[segment.index + 1]
+            );
+            accidentSegmentSelect.appendChild(option);
+        });
+
+        accidentSegmentSelect.selectedIndex = 0;
+    }
+
+    accidentSegmentSelect.disabled =
+        routeRequestInProgress || available.length === 0;
+
+    addAccidentButton.disabled =
+        routeRequestInProgress || available.length === 0;
+
+    refreshAccidentList();
+}
+
+async function addSelectedAccident() {
+    if (routeRequestInProgress) return;
+
+    const selected = accidentSegmentSelect.value;
+    if (selected === "") {
+        accidentStatus.textContent =
+            "Calculate a route and select a road segment first.";
+        return;
+    }
+
+    const index = Number(selected);
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= currentRouteNodes.length - 1 ||
+        !currentRouteCoordinates[index] ||
+        !currentRouteCoordinates[index + 1]
+    ) {
+        accidentStatus.textContent =
+            "The selected segment is no longer available.";
+        return;
+    }
+
+    const first = currentRouteNodes[index];
+    const second = currentRouteNodes[index + 1];
+
+    if (isRoadClosed(first, second)) {
+        accidentStatus.textContent =
+            "This road is closed. Select another segment.";
+        return;
+    }
+
+    if (isRoadAccident(first, second)) {
+        accidentStatus.textContent =
+            "This road already has a simulated accident.";
+        return;
+    }
+
+    accidentRoads.push({
+        nodes: [first, second],
+        label: formatSegmentLabel(
+            index,
+            currentRouteCoordinates[index],
+            currentRouteCoordinates[index + 1]
+        ),
+        coordinates: [
+            currentRouteCoordinates[index],
+            currentRouteCoordinates[index + 1]
+        ]
+    });
+
+    refreshAccidentMap();
+    updateAccidentOptions();
+    accidentStatus.textContent =
+        "Simulated accident added. Recalculating route...";
+
+    await findRoute();
+}
+
+async function removeSelectedAccident() {
+    if (routeRequestInProgress) return;
+
+    const selected = activeAccidentSelect.value;
+    if (selected === "") return;
+
+    const index = Number(selected);
+    if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= accidentRoads.length
+    ) {
+        return;
+    }
+
+    accidentRoads.splice(index, 1);
+    refreshAccidentMap();
+    updateAccidentOptions();
+    accidentStatus.textContent =
+        "Accident removed. Recalculating route...";
+
+    await findRoute();
+}
+
+async function clearSimulatedAccidents() {
+    if (routeRequestInProgress) return;
+
+    if (accidentRoads.length === 0) return;
+
+    accidentRoads = [];
+    refreshAccidentMap();
+    updateAccidentOptions();
+    accidentStatus.textContent =
+        "All simulated accidents cleared. Recalculating route...";
+
+    await findRoute();
+}
+
+addAccidentButton.addEventListener("click", addSelectedAccident);
+removeAccidentButton.addEventListener("click", removeSelectedAccident);
+clearAccidentsButton.addEventListener("click", clearSimulatedAccidents);
+
 // SELECT LOCATION
 // ==================================================
 
@@ -1328,6 +1800,11 @@ async function closeSelectedRoad() {
 
     closedRoads.push({
         nodes: [firstNode, secondNode],
+        label: formatSegmentLabel(
+            index,
+            currentRouteCoordinates[index],
+            currentRouteCoordinates[index + 1]
+        ),
         coordinates: [
             currentRouteCoordinates[index],
             currentRouteCoordinates[index + 1]
@@ -1407,7 +1884,6 @@ async function findRoute() {
     document.getElementById("emergency-status").textContent =
         emergency === "yes" ? "Requested" : "Disabled";
 
-    stopAmbulanceSimulation(true);
     routeRequestInProgress = true;
 
     routeButton.disabled = true;
@@ -1431,12 +1907,21 @@ async function findRoute() {
             },
 
             body: JSON.stringify({
-                start_coordinates: startCoordinates,
+                start_coordinates:
+                    ambulanceMarker && ambulanceTimer !== null
+                        ? [
+                            ambulanceMarker.getLatLng().lat,
+                            ambulanceMarker.getLatLng().lng
+                          ]
+                        : startCoordinates,
                 destination_coordinates: destinationCoordinates,
                 traffic: traffic,
                 emergency: emergency === "yes",
 
                 blocked_roads: closedRoads.map(function (road) {
+                    return road.nodes;
+                }),
+                accident_roads: accidentRoads.map(function (road) {
                     return road.nodes;
                 })
             })
@@ -1528,62 +2013,83 @@ async function findRoute() {
         const resultContent = document.createElement("div");
 
         resultContent.innerHTML = `
-            <h3>AI Route Result</h3>
+            <h3>Your Recommended Route</h3>
 
-            <b>Start:</b><br>
-            ${escapeHTML(startLocationText.textContent)}<br>
+            <div class="route-summary">
+                <p><strong>Start:</strong><br>
+                ${escapeHTML(startLocationText.textContent)}</p>
 
-            <b>Destination:</b><br>
-            ${escapeHTML(destinationLocationText.textContent)}<br>
+                <p><strong>Destination:</strong><br>
+                ${escapeHTML(destinationLocationText.textContent)}</p>
 
-            <b>Road Distance:</b>
-            ${
-                Number.isFinite(distanceKm)
-                    ? distanceKm.toFixed(3) + " km"
-                    : "Not available"
-            }<br>
+                <div class="route-summary-grid">
+                    <div class="route-summary-card">
+                        <span>Road Distance</span>
+                        <strong>${
+                            Number.isFinite(distanceKm)
+                                ? distanceKm.toFixed(3) + " km"
+                                : "Unavailable"
+                        }</strong>
+                    </div>
+                    <div class="route-summary-card">
+                        <span>Estimated Travel Time</span>
+                        <strong>${
+                            Number.isFinite(estimatedTime)
+                                ? estimatedTime.toFixed(1) + " min"
+                                : "Unavailable"
+                        }</strong>
+                    </div>
+                    <div class="route-summary-card">
+                        <span>Traffic Level</span>
+                        <strong>${escapeHTML(data.traffic || traffic)}</strong>
+                    </div>
+                    <div class="route-summary-card">
+                        <span>Emergency Priority</span>
+                        <strong>${data.emergency_priority ? "On" : "Off"}</strong>
+                    </div>
+                </div>
+            </div>
 
-            <b>Route Nodes:</b> ${routeNodes.length}<br>
+            <h4>Why was this route selected?</h4>
+            <p>
+                The AI routing system evaluates road distance and the selected
+                simulated traffic conditions to find a suitable route.
+                When emergency priority is enabled, a reduced simulated
+                congestion penalty is applied.
+            </p>
 
-            <b>Traffic-adjusted Cost:</b>
-            ${
-                Number.isFinite(trafficCost)
-                    ? trafficCost.toFixed(2)
-                    : "Not available"
-            }<br>
+            <p><strong>Current result:</strong>
+                ${escapeHTML(data.message || "A route has been calculated.")}
+            </p>
 
-            <b>Estimated Travel Time:</b>
-            ${
-                Number.isFinite(estimatedTime)
-                    ? estimatedTime.toFixed(1) + " min (simulated)"
-                    : "Not available"
-            }<br>
-
-            <b>Simulated Signal Delay:</b>
-            ${
-                Number.isFinite(signalDelay)
-                    ? signalDelay.toFixed(2) + " min"
-                    : "Not available"
-            }<br>
-
-            <b>Selected Traffic Level:</b>
-            ${escapeHTML(data.traffic || traffic)}<br>
-
-            <b>Emergency Priority Request:</b>
-            ${data.emergency_priority ? "Requested" : "Not requested"}<br>
-
-            <b>Selected Vehicle:</b>
-            ${escapeHTML(document.getElementById("vehicle-type").selectedOptions[0].textContent)}<br>
-
-            <b>Active Road Closures:</b>
-            ${closedRoads.length}<br>
-
-            <b>Status:</b>
-            ${escapeHTML(data.message || "Route calculated.")}<br>
+            <details class="route-more-details">
+                <summary>More route information</summary>
+                <p><strong>Route nodes:</strong> ${routeNodes.length}</p>
+                <p><strong>Traffic-adjusted cost:</strong>
+                    ${
+                        Number.isFinite(trafficCost)
+                            ? trafficCost.toFixed(2)
+                            : "Unavailable"
+                    }
+                </p>
+                <p><strong>Simulated signal delay:</strong>
+                    ${
+                        Number.isFinite(signalDelay)
+                            ? signalDelay.toFixed(2) + " min"
+                            : "Unavailable"
+                    }
+                </p>
+                <p><strong>Selected vehicle:</strong>
+                    ${escapeHTML(document.getElementById("vehicle-type").selectedOptions[0].textContent)}
+                </p>
+                <p><strong>Active simulated road closures:</strong>
+                    ${closedRoads.length}
+                </p>
+            </details>
 
             <small>
-                Traffic and travel time are simulated.
-                Live traffic and real signal control are not integrated.
+                Travel time, traffic conditions and signal delay are simulated.
+                Live traffic data and real traffic signal control are not integrated.
             </small>
         `;
 
@@ -1610,6 +2116,148 @@ async function findRoute() {
         refreshClosureList();
     }
 }
+
+
+
+const compareButton = document.getElementById("compare-button");
+const comparisonResult = document.getElementById("comparison-result");
+
+async function compareAlgorithms() {
+    if (!startCoordinates || !destinationCoordinates) {
+        comparisonResult.textContent =
+            "Please select both Start and Destination on the map first.";
+        return;
+    }
+
+    compareButton.disabled = true;
+    compareButton.textContent = "Comparing Algorithms...";
+    comparisonResult.textContent =
+        "Running A* and Dijkstra with the same routing settings...";
+
+    try {
+        const response = await fetch("/compare-algorithms", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                start_coordinates: startCoordinates,
+                destination_coordinates: destinationCoordinates,
+                traffic: document.getElementById("traffic").value,
+                emergency:
+                    document.getElementById("emergency").value === "yes",
+                blocked_roads: closedRoads.map(function (road) {
+                    return road.nodes;
+                }),
+                accident_roads: accidentRoads.map(function (road) {
+                    return road.nodes;
+                })
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Algorithm comparison failed."
+            );
+        }
+
+        const algorithms = [
+            ["A*", data["A*"]],
+            ["Dijkstra", data["Dijkstra"]]
+        ];
+
+        function metric(value, digits) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(digits) : "?";
+        }
+
+        const rows = algorithms.map(function (entry) {
+            const name = entry[0];
+            const item = entry[1] || {};
+
+            if (!item.found) {
+                return `
+                    <tr>
+                        <td>${name}</td>
+                        <td colspan="4">No route found</td>
+                    </tr>
+                `;
+            }
+
+            return `
+                <tr>
+                    <td><strong>${name}</strong></td>
+                    <td>${metric(item.execution_time_ms, 3)} ms</td>
+                    <td>${Number.isFinite(Number(item.expanded_nodes))
+                        ? Number(item.expanded_nodes).toLocaleString()
+                        : "?"}</td>
+                    <td>${metric(item.distance_km, 3)} km</td>
+                    <td>${metric(item.traffic_cost, 2)}</td>
+                </tr>
+            `;
+        }).join("");
+
+        comparisonResult.innerHTML = `
+            <strong>Comparison Results</strong>
+            <div>
+                Traffic: ${escapeHTML(data.traffic_level || "selected setting")}
+                ? Emergency priority:
+                ${data.emergency_vehicle ? "On" : "Off"}
+                ? Closed roads: ${Number(data.blocked_roads_count) || 0}
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Execution Time</th>
+                        <th>Expanded Nodes</th>
+                        <th>Route Distance</th>
+                        <th>Traffic-adjusted Cost</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+
+            <p style="margin-top:10px">
+                Lower execution time means a faster run in this test.
+                Timing can change between runs; compare route cost and
+                expanded nodes as well.
+            </p>
+        `;
+    } catch (error) {
+        comparisonResult.textContent =
+            "Comparison failed: " + error.message;
+    } finally {
+        compareButton.disabled = false;
+        compareButton.textContent = "Compare Algorithms";
+    }
+}
+
+compareButton.addEventListener("click", compareAlgorithms);
+
+
+// Re-evaluate the route when simulated traffic changes mid-trip.
+const trafficControl = document.getElementById("traffic");
+
+trafficControl.addEventListener("change", function () {
+    if (!ambulanceMarker || ambulanceTimer === null) {
+        return;
+    }
+
+    if (routeRequestInProgress) {
+        closureStatus.textContent =
+            "A route calculation is already running. Please change traffic again when it finishes.";
+        return;
+    }
+
+    closureStatus.textContent =
+        "Traffic changed. Re-evaluating the route from the vehicle's current position...";
+
+    findRoute();
+});
 
 
 routeButton.addEventListener("click", findRoute);

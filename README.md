@@ -22,6 +22,9 @@ The project demonstrates how AI search algorithms can support route planning und
 * Map-based start and destination selection.
 * Simulated road closures.
 * Automatic route recalculation around closed road segments when an alternative route exists.
+* Simulated accident scenarios with accident-aware route recalculation.
+* Accident penalties applied to affected road segments during route calculation.
+* A* and Dijkstra algorithm comparison with simulated accident costs.
 * Input validation and API error handling.
 * Automated tests for application functionality and road-closure routing.
 
@@ -54,6 +57,7 @@ AI-Project/
 ├── test_place_connections.py
 ├── test_api_road_closure.py
 ├── test_road_closure.py
+├── test_accident_simulation.py
 ├── data/
 │   └── saidpur_road_graph.json
 └── templates/
@@ -82,7 +86,7 @@ The application uses a locally stored road graph for route calculation. Online m
 Navigate to the project directory:
 
 ```powershell
-cd F:\AI-Project
+cd F:\AI-Project\submission\RouteResQ-AI-Group-Submission
 ```
 
 ### 2. Create a Virtual Environment
@@ -108,7 +112,7 @@ The virtual environment keeps project dependencies separate from the system Pyth
 Open PowerShell and execute:
 
 ```powershell
-cd F:\AI-Project
+cd F:\AI-Project\submission\RouteResQ-AI-Group-Submission
 .\.venv\Scripts\python.exe app.py
 ```
 
@@ -132,6 +136,8 @@ To stop the server, press `Ctrl + C` in PowerShell.
 6. Review the displayed route and estimated travel information.
 7. If the interface provides road-closure controls, simulate a road closure and recalculate the route.
 8. Reopen the closed roads when you want to restore the original routing conditions.
+9. Use the simulated accident controls to add, remove, or clear accident scenarios and recalculate the route.
+10. Use the algorithm-comparison feature to compare A* and Dijkstra when that control is available in the interface.
 
 The application recalculates routes using the available road graph and current simulated conditions.
 
@@ -140,7 +146,7 @@ The application recalculates routes using the available road graph and current s
 Run the complete automated test suite from the project directory:
 
 ```powershell
-cd F:\AI-Project
+cd F:\AI-Project\submission\RouteResQ-AI-Group-Submission
 .\.venv\Scripts\python.exe -m unittest discover -v
 ```
 
@@ -151,7 +157,7 @@ The road-closure tests also check that the router can return no route when all a
 A successful test run ends with a summary similar to:
 
 ```text
-Ran 16 tests
+Ran 20 tests
 OK
 ```
 
@@ -197,6 +203,21 @@ The road-closure tests verify alternative-route selection and handling of situat
 
 These closures are application-level simulations. They do not represent verified live road incidents or automatically detect real-world road closures.
 
+## Simulated Accident Scenarios
+
+The application supports simulated accidents on selected road segments. An accident adds a routing penalty, allowing the route planner to prefer a suitable alternative when one is available.
+
+Users can add simulated accidents, remove selected accidents, or clear the simulated accident list through the interface.
+
+Accidents are simulated scenarios. The application does not detect real accidents or receive verified live accident reports.
+
+Automated tests cover alternative-route selection, graph immutability, consistent accident costs for A* and Dijkstra, and rejection of invalid accident segments.
+
+## Algorithm Comparison
+
+The routing module supports comparison between A* and Dijkstra under the configured routing conditions, including simulated accident penalties. Both algorithms are evaluated using the same road-network and simulated-cost assumptions.
+
+The comparison is intended for academic demonstration and does not establish that either algorithm is universally faster or better for every real-world route.
 ## Road Data and Attribution
 
 The locally stored road graph is:
@@ -244,3 +265,6 @@ Its simulation results should not be treated as validated real-world emergency-r
 ## License
 
 The application code has not yet been assigned a separate open-source license. OpenStreetMap data remains subject to its applicable licensing and attribution requirements.
+
+
+
