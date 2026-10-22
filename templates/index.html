@@ -453,7 +453,373 @@
             }
         }
 
-    </style>
+    
+/* ROUTERESQ_TWO_PAGE_LAYOUT */
+:root {
+    --rq-navy: #10243e;
+    --rq-teal: #0d9488;
+    --rq-teal-dark: #0f766e;
+    --rq-bg: #f3f7fb;
+    --rq-border: #dce6ef;
+    --rq-text: #172033;
+}
+
+body {
+    background: var(--rq-bg);
+    color: var(--rq-text);
+}
+
+header {
+    padding: 28px 20px;
+    background: linear-gradient(120deg, #10243e, #164e63);
+    box-shadow: 0 5px 22px rgba(16, 36, 62, .15);
+}
+
+header h1 {
+    margin-bottom: 8px;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.5px;
+}
+
+header p {
+    margin: 0;
+    color: #d7e9f2;
+}
+
+.container {
+    max-width: 1500px;
+    padding: 24px;
+}
+
+.workflow-page[hidden] {
+    display: none !important;
+}
+
+.workflow-heading {
+    margin: 4px 0 22px;
+}
+
+.workflow-heading .eyebrow {
+    margin-bottom: 7px;
+    color: var(--rq-teal-dark);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.workflow-heading h2 {
+    margin: 0 0 8px;
+    color: var(--rq-navy);
+    font-size: clamp(24px, 3vw, 32px);
+}
+
+.workflow-heading p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.65;
+}
+
+.configuration-grid {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.configuration-card,
+.route-sidebar,
+.incident-card {
+    min-width: 0;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid var(--rq-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 26px rgba(15, 35, 60, .055);
+}
+
+.configuration-card h2,
+.route-sidebar > h2 {
+    margin-top: 0;
+    color: var(--rq-navy);
+}
+
+.configuration-card label {
+    display: block;
+    margin: 18px 0 8px;
+    color: #334155;
+    font-weight: 700;
+}
+
+.configuration-card input,
+.configuration-card select {
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.configuration-card input {
+    padding: 10px 12px;
+}
+
+.configuration-card select {
+    padding: 9px 12px;
+}
+
+.configuration-card button,
+.route-sidebar button,
+.incident-card button {
+    border-radius: 10px;
+}
+
+.workflow-primary {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 22px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--rq-teal);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+}
+
+.workflow-primary:hover {
+    background: var(--rq-teal-dark);
+    transform: translateY(-1px);
+}
+
+.workflow-secondary {
+    min-height: 42px;
+    margin-bottom: 18px;
+    padding: 10px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--rq-navy);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.workflow-secondary:hover {
+    background: #f1f5f9;
+}
+
+.route-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.route-toolbar .workflow-heading {
+    margin: 0;
+}
+
+.stats {
+    margin-bottom: 20px;
+    gap: 16px;
+}
+
+.stat-card {
+    border: 1px solid var(--rq-border);
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(15, 35, 60, .045);
+}
+
+.route-layout {
+    display: grid;
+    grid-template-columns: minmax(290px, .82fr) minmax(0, 1.6fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.route-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.route-sidebar #route-button {
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    background: var(--rq-teal);
+}
+
+.route-sidebar #route-button:hover {
+    background: var(--rq-teal-dark);
+}
+
+.route-sidebar .result,
+.route-sidebar .algorithm-comparison {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.route-layout .map-panel {
+    min-width: 0;
+    margin: 0;
+    padding: 20px;
+    border: 1px solid var(--rq-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 26px rgba(15, 35, 60, .055);
+}
+
+.route-layout .map-panel > h2 {
+    margin-top: 0;
+    color: var(--rq-navy);
+}
+
+.route-layout #map {
+    width: 100%;
+    height: min(68vh, 690px);
+    min-height: 420px;
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.route-layout .map-panel > .map-note {
+    line-height: 1.6;
+}
+
+.incident-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 22px;
+    align-items: start;
+}
+
+.incident-card h3 {
+    margin-top: 0;
+    color: var(--rq-navy);
+}
+
+.incident-card select {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.incident-card .location-instructions,
+.incident-card .notice {
+    line-height: 1.6;
+}
+
+.incident-card .closure-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+}
+
+.workflow-page .location-selector {
+    min-width: 0;
+}
+
+#configuration-page .location-selector {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+#configuration-page .location-selector h3 {
+    margin-top: 0;
+    color: var(--rq-navy);
+}
+
+#configuration-page .location-selector input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#configuration-page .location-selector button {
+    max-width: 100%;
+}
+
+footer {
+    margin-top: 32px;
+}
+
+@media (max-width: 900px) {
+    .configuration-grid,
+    .route-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .route-layout #map {
+        height: 55vh;
+        min-height: 350px;
+    }
+}
+
+@media (max-width: 650px) {
+    .container {
+        padding: 14px;
+    }
+
+    .configuration-card,
+    .route-sidebar,
+    .incident-card,
+    .route-layout .map-panel {
+        padding: 16px;
+    }
+
+    .incident-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .route-layout #map {
+        min-height: 320px;
+    }
+}
+
+/* ROUTERESQ_SIMULATION_FIRST_LAYOUT */
+#route-page .route-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.5fr);
+    gap: 20px;
+    align-items: start;
+    width: 100%;
+}
+
+#route-page .route-sidebar {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#route-page .route-layout > .map-panel {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#route-page .incident-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin: 0 0 22px;
+}
+
+@media (max-width: 900px) {
+    #route-page .route-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+</style>
 </head>
 
 <body>
@@ -819,6 +1185,10 @@ let currentRouteCoordinates = [];
 let closedRoads = [];
 let accidentRoads = [];
 
+let routeBeforeAccidentNodes = null;
+let routeBeforeAccidentCoordinates = null;
+let comparisonRoute = null;
+
 let routeRequestInProgress = false;
 
 
@@ -827,6 +1197,7 @@ let ambulanceTimer = null;
 let ambulanceRouteCoordinates = [];
 let ambulanceSegmentIndex = 0;
 let ambulanceProgress = 0;
+let ambulanceSegmentDuration = 1000;
 
 function stopAmbulanceSimulation(removeMarker = true) {
     if (ambulanceTimer !== null) {
@@ -858,16 +1229,45 @@ function startAmbulanceSimulation(routeCoordinates, enabled) {
 
     if (ambulanceMarker && ambulanceTimer !== null) {
         const position = ambulanceMarker.getLatLng();
+        const currentPosition = [position.lat, position.lng];
 
-        // Continue from the current simulated vehicle position.
+        // Find the nearest point on the recalculated route.
+        let nearestIndex = 0;
+        let nearestDistance = Infinity;
+
+        routeCoordinates.forEach(function (coordinate, index) {
+            const latDifference = coordinate[0] - position.lat;
+            const lngDifference = coordinate[1] - position.lng;
+            const distance =
+                latDifference * latDifference +
+                lngDifference * lngDifference;
+
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearestIndex = index;
+            }
+        });
+
+        // Continue from the current position toward the destination.
         ambulanceRouteCoordinates = [
-            [position.lat, position.lng],
-            ...routeCoordinates
+            currentPosition,
+            ...routeCoordinates.slice(nearestIndex)
         ];
+
         ambulanceSegmentIndex = 0;
         ambulanceProgress = 0;
+        ambulanceSegmentDuration = Math.max(
+            500,
+            18000 / (ambulanceRouteCoordinates.length - 1)
+        );
         return;
     }
+    if (ambulanceMarker && ambulanceTimer === null) {
+        map.removeLayer(ambulanceMarker);
+        ambulanceMarker = null;
+    }
+
+
 
     const vehicleType =
         document.getElementById("vehicle-type").value;
@@ -942,7 +1342,7 @@ function startAmbulanceSimulation(routeCoordinates, enabled) {
     ambulanceSegmentIndex = 0;
     ambulanceProgress = 0;
 
-    const segmentDuration = Math.max(
+    ambulanceSegmentDuration = Math.max(
         500,
         18000 / (ambulanceRouteCoordinates.length - 1)
     );
@@ -961,7 +1361,7 @@ function startAmbulanceSimulation(routeCoordinates, enabled) {
             return;
         }
 
-        ambulanceProgress += 100 / segmentDuration;
+        ambulanceProgress += 100 / ambulanceSegmentDuration;
 
         if (ambulanceProgress >= 1) {
             ambulanceSegmentIndex += 1;
@@ -1082,6 +1482,27 @@ function removeCurrentRoute() {
     }
 }
 
+function clearRouteComparison() {
+    if (comparisonRoute) {
+        map.removeLayer(comparisonRoute);
+        comparisonRoute = null;
+    }
+}
+
+function routesMatch(firstRoute, secondRoute) {
+    if (!Array.isArray(firstRoute) || !Array.isArray(secondRoute)) {
+        return false;
+    }
+
+    if (firstRoute.length !== secondRoute.length) {
+        return false;
+    }
+
+    return firstRoute.every(function (node, index) {
+        return String(node) === String(secondRoute[index]);
+    });
+}
+
 
 function setResultMessage(title, message) {
     resultBox.replaceChildren();
@@ -1099,6 +1520,9 @@ function setResultMessage(title, message) {
 function resetRouteState() {
     stopAmbulanceSimulation(true);
     removeCurrentRoute();
+    clearRouteComparison();
+    routeBeforeAccidentNodes = null;
+    routeBeforeAccidentCoordinates = null;
 
     currentRouteNodes = [];
     currentRouteCoordinates = [];
@@ -1428,6 +1852,15 @@ async function addSelectedAccident() {
         return;
     }
 
+    if (accidentRoads.length === 0) {
+        routeBeforeAccidentNodes = currentRouteNodes.slice();
+        routeBeforeAccidentCoordinates = currentRouteCoordinates.map(
+            function (coordinate) {
+                return coordinate.slice();
+            }
+        );
+    }
+
     accidentRoads.push({
         nodes: [first, second],
         label: formatSegmentLabel(
@@ -1465,6 +1898,13 @@ async function removeSelectedAccident() {
     }
 
     accidentRoads.splice(index, 1);
+
+    if (accidentRoads.length === 0) {
+        routeBeforeAccidentNodes = null;
+        routeBeforeAccidentCoordinates = null;
+        clearRouteComparison();
+    }
+
     refreshAccidentMap();
     updateAccidentOptions();
     accidentStatus.textContent =
@@ -1479,6 +1919,9 @@ async function clearSimulatedAccidents() {
     if (accidentRoads.length === 0) return;
 
     accidentRoads = [];
+    routeBeforeAccidentNodes = null;
+    routeBeforeAccidentCoordinates = null;
+    clearRouteComparison();
     refreshAccidentMap();
     updateAccidentOptions();
     accidentStatus.textContent =
@@ -1907,13 +2350,7 @@ async function findRoute() {
             },
 
             body: JSON.stringify({
-                start_coordinates:
-                    ambulanceMarker && ambulanceTimer !== null
-                        ? [
-                            ambulanceMarker.getLatLng().lat,
-                            ambulanceMarker.getLatLng().lng
-                          ]
-                        : startCoordinates,
+                start_coordinates: startCoordinates,
                 destination_coordinates: destinationCoordinates,
                 traffic: traffic,
                 emergency: emergency === "yes",
@@ -1976,6 +2413,27 @@ async function findRoute() {
         currentRouteCoordinates = routeCoordinates;
 
         removeCurrentRoute();
+        clearRouteComparison();
+
+        if (
+            accidentRoads.length > 0 &&
+            Array.isArray(routeBeforeAccidentNodes) &&
+            Array.isArray(routeBeforeAccidentCoordinates) &&
+            routeBeforeAccidentCoordinates.length > 1 &&
+            !routesMatch(routeBeforeAccidentNodes, routeNodes)
+        ) {
+            comparisonRoute = L.polyline(
+                routeBeforeAccidentCoordinates,
+                {
+                    color: "#dc2626",
+                    weight: 7,
+                    opacity: 0.9,
+                    dashArray: "8, 8"
+                }
+            ).bindPopup(
+                "<b>Previous Route</b><br>Route before simulated accident"
+            ).addTo(map);
+        }
 
         selectedRoute = L.polyline(routeCoordinates, {
             color: "#16a34a",
@@ -2262,6 +2720,178 @@ trafficControl.addEventListener("change", function () {
 
 routeButton.addEventListener("click", findRoute);
 
+</script>
+<script>
+/* ROUTERESQ_TWO_PAGE_LAYOUT */
+(function () {
+    const main = document.querySelector("main.container");
+    if (!main || document.getElementById("configuration-page")) return;
+
+    const stats = main.querySelector(".stats");
+    const oldLayout = main.querySelector(".layout");
+    if (!stats || !oldLayout) return;
+
+    const controlPanel = oldLayout.querySelector(".panel");
+    const mapPanel = oldLayout.querySelector(".map-panel");
+    if (!controlPanel || !mapPanel) return;
+
+    const locationSelector = mapPanel.querySelector(".location-selector");
+    const incidentControls = controlPanel.querySelector(".location-selector");
+    const trafficLabel = controlPanel.querySelector('label[for="traffic"]');
+    const traffic = document.getElementById("traffic");
+    const emergencyLabel = controlPanel.querySelector('label[for="emergency"]');
+    const emergency = document.getElementById("emergency");
+    const vehicleLabel = controlPanel.querySelector('label[for="vehicle-type"]');
+    const vehicle = document.getElementById("vehicle-type");
+    const routeButton = document.getElementById("route-button");
+    const result = document.getElementById("result");
+    const comparison = controlPanel.querySelector(".algorithm-comparison");
+
+    if (!locationSelector || !incidentControls || !traffic || !emergency ||
+        !vehicle || !routeButton || !result || !comparison) return;
+
+    const page1 = document.createElement("section");
+    page1.id = "configuration-page";
+    page1.className = "workflow-page";
+
+    const page2 = document.createElement("section");
+    page2.id = "route-page";
+    page2.className = "workflow-page";
+    page2.hidden = true;
+
+    const heading1 = document.createElement("div");
+    heading1.className = "workflow-heading";
+    heading1.innerHTML =
+        '<div class="eyebrow">Step 1 of 2</div>' +
+        '<h2>Plan Your Emergency Route</h2>' +
+        '<p>Choose your locations and configure the traffic scenario before viewing the map.</p>';
+
+    const configGrid = document.createElement("div");
+    configGrid.className = "configuration-grid";
+
+    const configCard = document.createElement("div");
+    configCard.className = "configuration-card";
+    configCard.innerHTML =
+        '<h2>Route Configuration</h2>' +
+        '<p>Set the vehicle, emergency priority and traffic conditions.</p>';
+
+    const locationCard = document.createElement("div");
+    locationCard.className = "configuration-card";
+    locationCard.innerHTML =
+        '<h2>Journey Locations</h2>' +
+        '<p>Search for both places, or choose a point on the map in the next step.</p>';
+
+    const continueButton = document.createElement("button");
+    continueButton.type = "button";
+    continueButton.id = "confirm-continue-button";
+    continueButton.className = "workflow-primary";
+    continueButton.textContent = "Confirm & Continue →";
+
+    configCard.append(
+        trafficLabel, traffic,
+        emergencyLabel, emergency,
+        vehicleLabel, vehicle,
+        continueButton
+    );
+
+    locationCard.appendChild(locationSelector);
+    configGrid.append(configCard, locationCard);
+    page1.append(heading1, configGrid);
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "route-toolbar";
+
+    const heading2 = document.createElement("div");
+    heading2.className = "workflow-heading";
+    heading2.innerHTML =
+        '<div class="eyebrow">Step 2 of 2</div>' +
+        '<h2>Live Route Workspace</h2>' +
+        '<p>View the map, calculate routes and test simulated road incidents.</p>';
+
+    const backButton = document.createElement("button");
+    backButton.type = "button";
+    backButton.id = "back-to-configuration-button";
+    backButton.className = "workflow-secondary";
+    backButton.textContent = "← Back to Configuration";
+    toolbar.append(heading2, backButton);
+
+    const routeLayout = document.createElement("div");
+    routeLayout.className = "route-layout";
+
+    const sidebar = document.createElement("div");
+    sidebar.className = "route-sidebar";
+    const sidebarTitle = document.createElement("h2");
+    sidebarTitle.textContent = "Route Results";
+    // Sidebar content is arranged after simulation cards are created.
+
+    const oldHeading = mapPanel.querySelector(":scope > h2");
+    if (oldHeading) oldHeading.textContent = "Interactive Road Map";
+
+    const mapNote = mapPanel.querySelector(":scope > .map-note");
+
+    // Map will be placed beside the left sidebar.
+
+    const incidentGrid = document.createElement("div");
+    incidentGrid.className = "incident-grid";
+
+    const children = Array.from(incidentControls.children);
+    const separatorIndex = children.findIndex(el => el.tagName === "HR");
+
+    if (separatorIndex < 0) {
+        console.error("Could not split the road closure and accident controls.");
+        return;
+    }
+
+    const closureCard = document.createElement("section");
+    closureCard.className = "incident-card";
+    closureCard.id = "road-closure-card";
+
+    const accidentCard = document.createElement("section");
+    accidentCard.className = "incident-card";
+    accidentCard.id = "simulated-accident-card";
+
+    children.slice(0, separatorIndex).forEach(el => closureCard.appendChild(el));
+    children.slice(separatorIndex + 1).forEach(el => accidentCard.appendChild(el));
+
+    incidentControls.remove();
+    incidentGrid.append(closureCard, accidentCard);
+    sidebar.append(incidentGrid, sidebarTitle, routeButton, result, comparison);
+    routeLayout.append(sidebar, mapPanel);
+
+    page2.append(toolbar, stats, routeLayout);
+    main.replaceChildren(page1, page2);
+
+    function showPage(page) {
+        page1.hidden = page !== 1;
+        page2.hidden = page !== 2;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        if (page === 2 && window.map && typeof window.map.invalidateSize === "function") {
+            setTimeout(() => window.map.invalidateSize(), 150);
+        }
+    }
+
+    continueButton.addEventListener("click", function () {
+        showPage(2);
+    });
+
+    backButton.addEventListener("click", function () {
+        showPage(1);
+    });
+
+    // Keep map selection usable: reveal the map after the existing
+    // selection handler has enabled its selection mode.
+    ["select-start-button", "select-destination-button"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener("click", function () {
+                setTimeout(() => showPage(2), 0);
+            });
+        }
+    });
+
+    // Existing application event listeners remain attached to the same elements.
+})();
 </script>
 </body>
 </html>

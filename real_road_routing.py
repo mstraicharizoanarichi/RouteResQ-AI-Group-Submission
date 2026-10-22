@@ -315,7 +315,7 @@ class RealRoadRouter:
 
                 # Simulated accident: triple this segment cost.
                 if frozenset((str(current), str(neighbor))) in normalized_accident_roads:
-                    factor *= 3.0
+                    factor *= 20.0
 
                 edge_cost = road_distance * factor
                 new_cost = current_cost + edge_cost
@@ -464,7 +464,7 @@ class RealRoadRouter:
 
                     # Both A* and Dijkstra use the same accident penalty.
                     if frozenset((str(current), str(neighbor))) in accident:
-                        factor *= 3.0
+                        factor *= 20.0
 
                     new_cost = cost + distance * factor
                     if new_cost >= costs.get(neighbor, float("inf")):
